@@ -1,0 +1,24 @@
+1-masala
+create_sale_summary_report <- function(df_data) {
+  # Har bir Region + Representative uchun jami savdoni hisoblaymiz
+  library(dplyr)
+  
+  summary_df <- df_data %>%
+    group_by(Region, Representative) %>%
+    summarise(Total_sales = sum(Total_sales, na.rm = TRUE)) %>%
+    ungroup()
+  
+  # Har bir Region uchun eng katta Total_salesni topamiz
+  top_sales <- summary_df %>%
+    group_by(Region) %>%
+    filter(Total_sales == max(Total_sales)) %>%
+    select(Region, Representative, Total_sales) %>%
+    arrange(Region)
+  
+  return(top_sales)
+}
+ 
+
+
+
+2-masala
