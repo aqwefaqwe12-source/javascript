@@ -1,0 +1,112 @@
+package main
+
+import (
+    "bufio"
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "os"
+    "strconv"
+    "strings"
+)
+
+// Manager struct - original order
+type Manager struct {
+    FullName       string
+    Position       string
+    Age            int32
+    YearsInCompany int32
+}
+
+// EncodeManager - required signature.
+// Uses helper struct with json tags and omitempty to omit empty fields.
+// Returns io.Reader containing the JSON (no extra whitespace).
+func EncodeManager(manager *Manager) (io.Reader, error) {
+    // helper with tags in required output names and omitempty
+    type managerJSON struct {
+        FullName       string `json:"full_name,omitempty"`
+        Position       string `json:"position,omitempty"`
+        Age            int32  `json:"age,omitempty"`
+        YearsInCompany int32  `json:"years_in_company,omitempty"`
+    }
+
+    var mj managerJSON
+    if manager != nil {
+        mj = managerJSON{
+            FullName:       manager.FullName,
+            Position:       manager.Position,
+            Age:            manager.Age,
+            YearsInCompany: manager.YearsInCompany,
+        }
+    }
+
+    enc, err := json.Marshal(mj)
+    if err != nil {
+        return nil, err
+    }
+    return bytes.NewReader(enc), nil
+}
+
+func main() {
+    // Read up to 4 lines from stdin according to the problem statement
+    reader := bufio.NewReader(os.Stdin)
+
+    // Helper to read a line and trim newline
+    readLine := func() (string, error) {
+        line, err := reader.ReadString('\n')
+        if err != nil {
+            // If EOF but some data present, still return trimmed line without error
+            if err == io.EOF {
+                return strings.TrimSpace(line), nil
+            }
+            return "", err
+        }
+        return strings.TrimSpace(line), nil
+    }
+
+    fullName, err := readLine()
+    if err != nil {
+        // if nothing to read, just exit with empty JSON
+        fmt.Fprint(os.Stdout, "{}")
+        return
+    }
+
+    position, err := readLine()
+    if err != nil {
+        position = ""
+    }
+
+    ageStr, err := readLine()
+    if err != nil {
+        ageStr = "0"
+    }
+    age64, _ := strconv.ParseInt(strings.TrimSpace(ageStr), 10, 32)
+    age := int32(age64)
+
+    yearsStr, err := readLine()
+    if err != nil {
+        yearsStr = "0"
+    }
+    years64, _ := strconv.ParseInt(strings.TrimSpace(yearsStr), 10, 32)
+    years := int32(years64)
+
+    m := &Manager{
+        FullName:       fullName,
+        Position:       position,
+        Age:            age,
+        YearsInCompany: years,
+    }
+
+    r, err := EncodeManager(m)
+    if err != nil {
+        // In judge you usually shouldn't print error text; print empty JSON as fallback
+        fmt.Fprint(os.Stdout, "{}")
+        return
+    }
+
+    // Write exactly the JSON bytes to stdout (no extra newlines or labels)
+    buf := new(bytes.Buffer)
+    _, _ = buf.ReadFrom(r)
+    os.Stdout.Write(buf.Bytes())
+}
