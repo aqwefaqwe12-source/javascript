@@ -1,0 +1,50 @@
+package main
+
+import (
+	"fmt"
+)
+
+// Global kanallar
+var (
+	serverChan chan int32
+	oddChan    chan int32
+	evenChan   chan int32
+)
+
+// Server funksiyasi — vazifa sharti bo‘yicha
+func Server() {
+	for val := range serverChan {
+		if val%2 == 0 {
+			evenChan <- val
+		} else {
+			oddChan <- val
+		}
+	}
+	close(oddChan)
+	close(evenChan)
+}
+
+func main() {
+	var n int
+	fmt.Scan(&n)
+
+	serverChan = make(chan int32, n)
+	oddChan = make(chan int32, n)
+	evenChan = make(chan int32, n)
+
+	go Server()
+
+	for i := 0; i < n; i++ {
+		var x int32
+		fmt.Scan(&x)
+		serverChan <- x
+	}
+	close(serverChan)
+
+	for v := range oddChan {
+		fmt.Println(v)
+	}
+	for v := range evenChan {
+		fmt.Println(v)
+	}
+}
